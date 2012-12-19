@@ -45,16 +45,16 @@ clef = Clef (PLtr 'B') 4;
 wv = view (p2 (-40, -37)) (r2 (40, 40));
  
 data St = St {
-  st_l :: Length,
-  st_a :: Int,
-  st_t :: Time,
-  st_k :: Key
+  st_l    :: Length,
+  st_a    :: Int,
+  st_time :: Time,
+  st_key  :: Key
 } deriving (Show);
 
 main = do {
   vp <- newIORef (Piece (array (1, 1) [(1, Time 1 0)]) (array ((1, 1), (1, 1)) [((1, 1), Bar 0 Map.empty)]));
   φp <- newIORef Nothing; -- phantom note
-  stp <- newIORef (St { st_l = Length 0 0, st_a = 0, st_t = Time 1 0, st_k = 0 });
+  stp <- newIORef (St { st_l = Length 0 0, st_a = 0, st_time = Time 1 0, st_key = 0 });
   GTK.initGUI;
   w <- GTK.windowNew;
   box <- GTK.vBoxNew False 0;
@@ -156,12 +156,12 @@ main = do {
              '-' -> modifyIORef stp $ \ st@St { st_a = a          } -> st { st_a = a - 1 };
              'K' -> prompt "Key Signature: " $ \ xs ->
                     case xs of {
-                      x:xs | (k, _):_ <- reads xs, x ∈ "+-"   -> modifyIORef stp $ \ st -> st { st_k = (case x of { '-' -> negate; '+' -> id; }) k };
+                      x:xs | (k, _):_ <- reads xs, x ∈ "+-"   -> modifyIORef stp $ \ st -> st { st_key = (case x of { '-' -> negate; '+' -> id; }) k };
                       _ -> warn "Invalid key signature";
                     };
              'T' -> prompt "Time Signature: " $ \ xs ->
                     case reads <$> List.splitOn "/" xs of {
-                      [(n, _):_, (b', _):_] | b:_ <- (takeWhile ((== b') ∘ (2^)) ∘ dropWhile ((< b') ∘ (2^))) [1..] -> modifyIORef stp $ \ st -> st { st_t = Time n b };
+                      [(n, _):_, (b', _):_] | b:_ <- (takeWhile ((== b') ∘ (2^)) ∘ dropWhile ((< b') ∘ (2^))) [1..] -> modifyIORef stp $ \ st -> st { st_time = Time n b };
                       _ -> warn "Invalid time signature";
                     };
              'p' -> getPointerLoc >>= print;
@@ -178,7 +178,7 @@ main = do {
              "Insert" | GTK.Shift ∈ GTK.eventModifier ev
                       -> readIORef stp >>= \ st ->
                          þrd3 <$> getPointerLoc >>=
-                         modifyIORef vp ∘ onPieceBars ∘ ($ Bar (st_k st) Map.empty) ∘ insertRow1;
+                         modifyIORef vp ∘ onPieceBars ∘ ($ Bar (st_key st) Map.empty) ∘ insertRow1;
              "Delete" -> fst3 & fmap fst <$> getPointerLoc >>=
                          maybe (return ())
                          (modifyIORef vp ∘ onPieceBars ∘ deleteCol);
@@ -191,9 +191,9 @@ main = do {
                             n = m_np >>= \ (n, p) -> ta ?! n >>= \ (Time tn _) -> Just $ n + round (p/fromIntegral tn);
                           }
                           in (modifyIORef vp $ onPieceBars $
-                              insertCol1 n (Bar (st_k st) Map.empty)) >>
+                              insertCol1 n (Bar (st_key st) Map.empty)) >>
                              (modifyIORef vp $ onPieceTime $
-                              insertElem n (st_t st)));
+                              insertElem n (st_time st)));
               _       -> return ();
            }
        ;
