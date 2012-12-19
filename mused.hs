@@ -6,6 +6,7 @@ import Control.Arrow;
 import Control.Category.Unicode;
 import Control.Monad hiding (mapM);
 import Data.Array;
+import Data.Char;
 import Data.Foldable;
 import Data.Foldable.Unicode;
 import Data.IORef;
@@ -40,13 +41,12 @@ import Util.Array;
 
 s = Draw.Style 0.8;
 
-clef = Clef (PLtr 'B') 4;
-
 data St = St {
   st_l    :: Length,
   st_a    :: Int,
   st_time :: Time,
   st_key  :: Key,
+  st_clef :: Clef,
   st_w    :: (P2, P2)
 } deriving (Show);
 
@@ -54,9 +54,9 @@ st_view :: (Backend b R2, Monoid' m) => St -> QDiagram b R2 m -> QDiagram b R2 m
 st_view (St { st_w = (P p, P q) }) = view (P p) (q-p);
 
 main = do {
-  vp <- newIORef (Piece (array (1, 1) [(1, Time 1 0)]) (array ((1, 1), (1, 1)) [((1, 1), Bar 0 Map.empty)]));
+  vp <- newIORef (Piece (array (1, 1) [(1, Time 1 0)]) (array ((1, 1), (1, 1)) [((1, 1), Bar (Clef (PLtr 'B') 4) 0 Map.empty)]));
   φp <- newIORef Nothing; -- phantom note
-  stp <- newIORef (St { st_l = Length 0 0, st_a = 0, st_time = Time 1 0, st_key = 0, st_w = (p2 (-40, -37), p2 (0, 3)) });
+  stp <- newIORef (St { st_l = Length 0 0, st_a = 0, st_time = Time 1 0, st_key = 0, st_clef = Clef (PLtr 'B') 4, st_w = (p2 (-40, -37), p2 (0, 3)) });
   GTK.initGUI;
   w <- GTK.windowNew;
   box <- GTK.vBoxNew False 0;
@@ -125,11 +125,10 @@ main = do {
    readIORef stp >>= \ st ->
    modifyIORef vp $ onPieceBars ∘ modifyAt (m, n) $
    case GTK.eventButton ev of {
-     GTK.LeftButton ->  \ (Bar k nrm) ->
-                        Bar k $
+     GTK.LeftButton ->  \ (Bar clef@(Clef g0 o0) k nrm) ->
+                        Bar clef k $
                         (Map.insertWith Set.union p ∘ Set.singleton $
                          NR (Just (let {
-                                     Clef g0 o0 = clef;
                                      g :: PLtr;
                                      g = toEnum $ fromEnum g0 + g';
                                      a = list const 0 ∘ Set.toList ∘
@@ -140,8 +139,8 @@ main = do {
                                    in Pitch (PitchClass g (a + st_a st)) ((g' + fromEnum g0) `div` 8 + o0))) (st_l st)) $
                         Map.adjust (Set.filter $ \ (NR m_p _) -> isJust m_p) p $
                         nrm;
-     GTK.RightButton -> \ (Bar k nrm) ->
-                        Bar k $
+     GTK.RightButton -> \ (Bar clef k nrm) ->
+                        Bar clef k $
                         (Map.insert p ∘ Set.singleton $
                          NR Nothing (st_l st)) nrm;
      _               -> id;
@@ -158,6 +157,11 @@ main = do {
              '.' -> modifyIORef stp $ \ st@St { st_l = Length n b } -> st { st_l = Length (n+1) b };
              '+' -> modifyIORef stp $ \ st@St { st_a = a          } -> st { st_a = a + 1 };
              '-' -> modifyIORef stp $ \ st@St { st_a = a          } -> st { st_a = a - 1 };
+             'C' -> prompt "Clef: " $ \ xs ->
+                    case xs of {
+                      [g, o] | toUpper g ∈ ['A'..'G'], o ∈ ['0'..'9'] -> modifyIORef stp $ \ st -> st { st_clef = Clef (toEnum $ fromEnum (toUpper g) - fromEnum 'A') (toEnum $ fromEnum o - fromEnum '0') };
+                      _ -> warn "Invalid clef";
+                    };
              'K' -> prompt "Key Signature: " $ \ xs ->
                     case xs of {
                       x:xs | (k, _):_ <- reads xs, x ∈ "+-"   -> modifyIORef stp $ \ st -> st { st_key = (case x of { '-' -> negate; '+' -> id; }) k };
@@ -182,7 +186,7 @@ main = do {
              "Insert" | GTK.Shift ∈ GTK.eventModifier ev
                       -> readIORef stp >>= \ st ->
                          þrd3 <$> getPointerLoc >>=
-                         modifyIORef vp ∘ onPieceBars ∘ ($ Bar (st_key st) Map.empty) ∘ insertRow1;
+                         modifyIORef vp ∘ onPieceBars ∘ ($ Bar (st_clef st) (st_key st) Map.empty) ∘ insertRow1;
              "Delete" -> fst3 & fmap fst <$> getPointerLoc >>=
                          maybe (return ())
                          (modifyIORef vp ∘ onPieceBars ∘ deleteCol);
@@ -195,7 +199,7 @@ main = do {
                             n = m_np >>= \ (n, p) -> ta ?! n >>= \ (Time tn _) -> Just $ n + round (p/fromIntegral tn);
                           }
                           in (modifyIORef vp $ onPieceBars $
-                              insertCol1 n (Bar (st_key st) Map.empty)) >>
+                              insertCol1 n (Bar (st_clef st) (st_key st) Map.empty)) >>
                              (modifyIORef vp $ onPieceTime $
                               insertElem n (st_time st)));
               _       -> return ();
@@ -212,7 +216,7 @@ draw :: Piece -> QDiagram Cairo R2 (Last (BarNumber, Rational {- beat number -})
 draw (Piece ta ba) =
   let {
     go :: Time -> Array StaffNumber Bar -> Array StaffNumber (QDiagram Cairo R2 (Last Rational {- beat number -}));
-    go time = uncurry array <<< bounds &&& (uncurry zip <<< id *** Draw.sxbars s clef time <<< unzip ∘ assocs);
+    go time = uncurry array <<< bounds &&& (uncurry zip <<< id *** Draw.sxbars s time <<< unzip ∘ assocs);
 
     draw' :: Monoid' m => [QDiagram Cairo R2 m] -> QDiagram Cairo R2 (m, Last Int {- staff position -});
     draw' xs =

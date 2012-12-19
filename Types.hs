@@ -48,9 +48,9 @@ data NR = NR (Maybe Pitch) Length deriving (Eq, Ord, Show);
 
 type Key = Int;
 
-data Clef = Clef PLtr Octave;
+data Clef = Clef PLtr Octave deriving (Show);
 
-data Bar = Bar Key (Map Rational (Set NR)) deriving (Show);
+data Bar = Bar Clef Key (Map Rational (Set NR)) deriving (Show);
 
 data Piece = Piece (Array BarNumber Time) (Array (StaffNumber, BarNumber) Bar) deriving (Show);
 

@@ -81,22 +81,22 @@ staff l =
            rect l (1/2)) [-6..6];
 
 -- Synchronized bars
-sxbars :: ∀ b . (Renderable (Path R2) b, Backend b R2) => Style -> Clef -> Time -> [Bar] -> [QDiagram b R2 (Last Rational)];
-sxbars s clef time@(Time _ tb) = join $ fmap ∘ bar' s clef time ∘ foldr max tb ∘ fmap finesse;
+sxbars :: ∀ b . (Renderable (Path R2) b, Backend b R2) => Style -> Time -> [Bar] -> [QDiagram b R2 (Last Rational)];
+sxbars s time@(Time _ tb) = join $ fmap ∘ bar' s time ∘ foldr max tb ∘ fmap finesse;
 
 -- Query value is beat number
-bar :: (Renderable (Path R2) b, Backend b R2) => Style -> Clef -> Time -> Bar -> QDiagram b R2 (Last Rational);
-bar s clef time@(Time _ tb) = join $ bar' s clef time ∘ max tb ∘ finesse;
+bar :: (Renderable (Path R2) b, Backend b R2) => Style -> Time -> Bar -> QDiagram b R2 (Last Rational);
+bar s time@(Time _ tb) = join $ bar' s time ∘ max tb ∘ finesse;
 
 -- Find shortest note or rest in bar, to scale all appropriately by this
 finesse :: Bar -> Int;
-finesse (Bar _ nrm) =
+finesse (Bar _ _ nrm) =
   let {
     Length n b = foldr min (Length 0 0) (Set.map (\ (NR _ l') -> l') (fold nrm));
   } in b+n;
 
-bar' :: ∀ b . (Renderable (Path R2) b, Backend b R2) => Style -> Clef -> Time -> Int -> Bar -> QDiagram b R2 (Last Rational);
-bar' s (Clef g0 o0) (Time tn tb) b0 (Bar k nrm) =
+bar' :: ∀ b . (Renderable (Path R2) b, Backend b R2) => Style -> Time -> Int -> Bar -> QDiagram b R2 (Last Rational);
+bar' s (Time tn tb) b0 (Bar (Clef g0 o0) k nrm) =
   let {
     e = eccentricity s;
 
