@@ -42,19 +42,21 @@ s = Draw.Style 0.8;
 
 clef = Clef (PLtr 'B') 4;
 
-wv = view (p2 (-40, -37)) (r2 (40, 40));
- 
 data St = St {
   st_l    :: Length,
   st_a    :: Int,
   st_time :: Time,
-  st_key  :: Key
+  st_key  :: Key,
+  st_w    :: (P2, P2)
 } deriving (Show);
+
+st_view :: (Backend b R2, Monoid' m) => St -> QDiagram b R2 m -> QDiagram b R2 m;
+st_view (St { st_w = (P p, P q) }) = view (P p) (q-p);
 
 main = do {
   vp <- newIORef (Piece (array (1, 1) [(1, Time 1 0)]) (array ((1, 1), (1, 1)) [((1, 1), Bar 0 Map.empty)]));
   φp <- newIORef Nothing; -- phantom note
-  stp <- newIORef (St { st_l = Length 0 0, st_a = 0, st_time = Time 1 0, st_key = 0 });
+  stp <- newIORef (St { st_l = Length 0 0, st_a = 0, st_time = Time 1 0, st_key = 0, st_w = (p2 (-40, -37), p2 (0, 3)) });
   GTK.initGUI;
   w <- GTK.windowNew;
   box <- GTK.vBoxNew False 0;
@@ -100,9 +102,10 @@ main = do {
     locate :: Real a => (a, a) -> IO (Maybe (BarNumber, Rational), Maybe Int, Maybe StaffNumber);
     locate pos =
       getBOpts >>= \ o ->
+      st_view <$> readIORef stp >>= \ v ->
       tripleA getLast getLast getLast ∘
       flip runQuery (p2 $ join (***) (fromRational ∘ toRational) pos) ∘
-      query ∘ snd ∘ adjustDia Cairo o ∘ wv ∘ draw <$>
+      query ∘ snd ∘ adjustDia Cairo o ∘ v ∘ draw <$>
       readIORef vp;
   };
   GTK.onDestroy w GTK.mainQuit;
@@ -111,7 +114,8 @@ main = do {
   GTK.onExposeRect dra $
   \ r ->
   getBOpts >>= \ o ->
-  readIORef vp >>= GTK.renderWithDrawable d ∘ snd ∘ renderDia Cairo o ∘ wv ∘ draw;
+  st_view <$> readIORef stp >>= \ v ->
+  readIORef vp >>= GTK.renderWithDrawable d ∘ snd ∘ renderDia Cairo o ∘ v ∘ draw;
   GTK.onButtonPress dra $
   \ ev ->
   getBOpts >>= \ o ->
