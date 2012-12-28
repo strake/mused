@@ -19,7 +19,9 @@ import Diagrams.Attributes;
 import Diagrams.Combinators;
 import Diagrams.Core hiding (Style);
 import Diagrams.Core.Envelope;
+import Diagrams.Core.Points;
 import Diagrams.Path;
+import Diagrams.Segment;
 import Diagrams.TwoD.Align;
 import Diagrams.TwoD.Arc;
 import Diagrams.TwoD.Combinators;
@@ -58,7 +60,13 @@ rest s n =
   in case n of {
     0 -> translateY 1 ∘ alignT ∘ fc black $ rect (2*a) (1/2);
     1 ->                alignB ∘ fc black $ rect (2*a) (1/2);
-    _ -> mempty;
+    2 -> scale (3/4) ∘ translateY (-1) $ fromVertices (p2 <$> [(-1, 3), (0, 2), (-1, 1), (0, 1)]) <> arc (1/4 :: CircleFrac) (3/4 :: CircleFrac);
+    n ->
+      let {
+        v :: R2;
+        v = (1 + (fromIntegral n-3)/6)*(r2 (1, 2));
+        tail = pathLike (P $ v + r2 (0, -1)) False $ (trailSegments ∘ reverseTrail) (arcT (5/8 :: CircleFrac) (7/8 :: CircleFrac));
+      } in pathLike (p2 (0, -1)) False [straight v] <> cat' (negate v) (CatOpts { catMethod = Distrib, sep = 5**(1/2)/6 }) (take (n-2) $ repeat tail);
   };
 
 sharp, sharp2, flat, flat2, natural, space :: (PathLike (QDiagram b R2 m), Backend b R2, Monoid' m) => QDiagram b R2 m;
