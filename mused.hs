@@ -4,8 +4,11 @@ import Prelude hiding (mapM, foldr);
 import Control.Applicative;
 import Control.Arrow;
 import Control.Category.Unicode;
+import Control.Exception;
 import Control.Monad hiding (mapM);
 import Data.Array;
+import Data.Binary;
+import qualified Data.ByteString.Lazy as BS;
 import Data.Char;
 import Data.Foldable;
 import Data.Foldable.Unicode;
@@ -57,6 +60,8 @@ main = do {
   vp <- newIORef (Piece (array (1, 1) [(1, Time 1 0)]) (array ((1, 1), (1, 1)) [((1, 1), Bar (Clef (PLtr 'B') 4) 0 Map.empty)]));
   φp <- newIORef Nothing; -- phantom note
   stp <- newIORef (St { st_l = Length 0 0, st_a = 0, st_time = Time 1 0, st_key = 0, st_clef = Clef (PLtr 'B') 4, st_w = (p2 (-40, -37), p2 (0, 3)) });
+  filename_p <- newIORef "";
+
   GTK.initGUI;
   w <- GTK.windowNew;
   box <- GTK.vBoxNew False 0;
@@ -76,11 +81,12 @@ main = do {
       GTK.drawWindowGetPointerPos d >>= \ (_, x, y, mods) ->
       locate (x, y);
 
-    prompt :: [Char] -> ([Char] -> IO ()) -> IO ();
-    prompt msg x = do {
+    prompt :: [Char] -> [Char] -> ([Char] -> IO ()) -> IO ();
+    prompt msg hint x = do {
       b <- GTK.hBoxNew False 0;
       e <- GTK.entryNew;
       l <- GTK.labelNew (Just msg);
+      GTK.entrySetText e hint;
       GTK.boxPackStart b l GTK.PackNatural 0;
       GTK.boxPackEnd   b e GTK.PackGrow    0;
       GTK.boxPackEnd box b GTK.PackNatural 0;
@@ -157,17 +163,17 @@ main = do {
              '.' -> modifyIORef stp $ \ st@St { st_l = Length n b } -> st { st_l = Length (n+1) b };
              '+' -> modifyIORef stp $ \ st@St { st_a = a          } -> st { st_a = a + 1 };
              '-' -> modifyIORef stp $ \ st@St { st_a = a          } -> st { st_a = a - 1 };
-             'C' -> prompt "Clef: " $ \ xs ->
+             'C' -> prompt "Clef: " "" $ \ xs ->
                     case xs of {
                       [g, o] | toUpper g ∈ ['A'..'G'], o ∈ ['0'..'9'] -> modifyIORef stp $ \ st -> st { st_clef = Clef (toEnum $ fromEnum (toUpper g) - fromEnum 'A') (toEnum $ fromEnum o - fromEnum '0') };
                       _ -> warn "Invalid clef";
                     };
-             'K' -> prompt "Key Signature: " $ \ xs ->
+             'K' -> prompt "Key Signature: " "" $ \ xs ->
                     case xs of {
                       x:xs | (k, _):_ <- reads xs, x ∈ "+-"   -> modifyIORef stp $ \ st -> st { st_key = (case x of { '-' -> negate; '+' -> id; }) k };
                       _ -> warn "Invalid key signature";
                     };
-             'T' -> prompt "Time Signature: " $ \ xs ->
+             'T' -> prompt "Time Signature: " "" $ \ xs ->
                     case reads <$> List.splitOn "/" xs of {
                       [(n, _):_, (b', _):_] | b:_ <- (takeWhile ((== b') ∘ (2^)) ∘ dropWhile ((< b') ∘ (2^))) [1..] -> modifyIORef stp $ \ st -> st { st_time = Time n b };
                       _ -> warn "Invalid time signature";
@@ -175,6 +181,16 @@ main = do {
              'p' -> getPointerLoc >>= print;
              's' -> readIORef stp >>= print;
              'd' -> readIORef vp  >>= print;
+             'r' -> readIORef filename_p >>= \ f ->
+                    prompt "File to read: "  f $ \ f ->
+                    writeIORef filename_p f >>
+                    handle ((const :: a -> SomeException -> a) $ warn ("Failed to read file "  ++ f))
+                    (decode <$> BS.readFile f >>= writeIORef vp);
+             'w' -> readIORef filename_p >>= \ f ->
+                    prompt "File to write: " f $ \ f ->
+                    writeIORef filename_p f >>
+                    handle ((const :: a -> SomeException -> a) $ warn ("Failed to write file " ++ f))
+                    (encode <$> readIORef vp >>= BS.writeFile f);
               _  -> return ();
            }
        | otherwise ->
