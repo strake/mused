@@ -228,7 +228,7 @@ main = do {
   GTK.mainGUI;
 };
 
-draw :: Piece -> QDiagram Cairo R2 (Last (BarNumber, Rational {- beat number -}), Last Int {- staff position -}, Last StaffNumber {- staff number -});
+draw :: Piece -> QDiagram Cairo R2 (Last (BarNumber, Rational {- beat number -}), Last Int {- staff position -}, Last StaffNumber);
 draw (Piece ta ba) =
   let {
     go :: Time -> Array StaffNumber Bar -> Array StaffNumber (QDiagram Cairo R2 (Last Rational {- beat number -}));
