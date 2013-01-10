@@ -103,7 +103,7 @@ finesse (Bar _ _ nrm) =
     Length n b = foldr min (Length 0 0) (Set.map (\ (NR _ l') -> l') (fold nrm));
   } in b+n;
 
-bar' :: ∀ b . (Renderable (Path R2) b, Backend b R2) => Style -> Time -> Int -> Bar -> QDiagram b R2 (Last Rational);
+bar' :: ∀ b . (Renderable (Path R2) b, Backend b R2) => Style -> Time -> Int {- finesse -} -> Bar -> QDiagram b R2 (Last Rational);
 bar' s (Time tn tb) b0 (Bar (Clef g0 o0) k nrm) =
   let {
     e = eccentricity s;
