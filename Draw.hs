@@ -46,7 +46,7 @@ note s n =
     b = 1/2;
     a = b/(1-e^2)**(1/2);
     l = 4;
-    stem = translate (r2 (a, l/2)) (vrule l <> foldMap (\ n -> translate (r2 (1/2, l/2 - fromIntegral n)) (hrule 1)) [0..n-3]);
+    stem = translate (r2 (a, l/2)) (vrule l <> translateX (1/2) (strutX 1) <> foldMap (\ n -> translate (r2 (1/2, l/2 - fromIntegral n)) (hrule 1)) [0..n-3]);
     head = (n ≥ 2 ? fc black $ id) (ellipseXY a b);
   }
   in (n > 0 ? stem $ mempty) <> head;
@@ -143,8 +143,8 @@ bar' s (Time tn tb) b0 (Bar (Clef g0 o0) k nrm) =
          -- dots
          ((pad (3/2) ∘ scale (1/12)) (fc black unitCircle) <$ [1..n]);
 
-    positX :: (Monoid' m) => Rational -> QDiagram b R2 m -> QDiagram b R2 m;
-    positX p = join $ translateX ∘ (fromRational p *) ∘ (*2^b0) ∘ width;
+    --positX :: (Monoid' m) => Rational -> QDiagram b R2 m -> QDiagram b R2 m;
+    positX p = translateX ∘ (fromRational p *) ∘ (*2^b0) ∘ width ∘ go $ NR Nothing (Length 0 0);
 
     -- temporal locations in bar
     buckets :: (Renderable (Path R2) b, Backend b R2) => QDiagram b R2 (Last Rational);
