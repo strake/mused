@@ -143,12 +143,15 @@ main = do {
                                          keyPCs k;
                                    }
                                    in Pitch (PitchClass g (a + st_a st)) ((g' + fromEnum g0) `div` 8 + o0))) (st_l st)) $
-                        Map.adjust (Set.filter $ \ (NR m_p _) -> isJust m_p) p $
+                        Map.mapWithKey (\ q -> q < p || q - p >= (nl ∘ st_l) st ? id $ Set.filter $ \ (NR m_p _) -> isJust m_p) $
                         nrm;
      GTK.RightButton -> \ (Bar clef k nrm) ->
-                        Bar clef k $
-                        (Map.insert p ∘ Set.singleton $
-                         NR Nothing (st_l st)) nrm;
+                        Bar clef k $ let {
+                          f q x | q == p = Just $ Set.singleton $ NR Nothing (st_l st)
+                                | q  > p, q - p < (nl ∘ st_l) st = Nothing
+                                | otherwise = Just x
+                                ;
+                        } in Map.mapMaybeWithKey f nrm;
      _               -> id;
    }) >>
   uncurry (GTK.Rectangle 0 0) <$> GTK.drawableGetSize d >>=
