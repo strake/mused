@@ -144,13 +144,13 @@ bar' s (Time tn tb) b0 (Bar (Clef g0 o0) k nrm) =
          ((pad (3/2) ∘ scale (1/12)) (fc black unitCircle) <$ [1..n]);
 
     --positX :: (Monoid' m) => Rational -> QDiagram b R2 m -> QDiagram b R2 m;
-    positX p = translateX ∘ (fromRational p *) ∘ (*2^b0) ∘ width ∘ go $ NR Nothing (Length 0 0);
+    positX p = translateX ∘ (fromRational p *) ∘ (*2^(b0-tb)) ∘ width ∘ go $ NR Nothing (Length 0 0);
 
     -- temporal locations in bar
     buckets :: (Renderable (Path R2) b, Backend b R2) => QDiagram b R2 (Last Rational);
     buckets =
       lineColor transparent $ hcat $
       ($ rect (width ∘ go $ NR Nothing (Length 0 0)) 10) ∘ value ∘ Last ∘ Just <$>
-      takeWhile (< fromIntegral tn) ((/2^b0) <$> [0..]);
+      takeWhile (< fromIntegral tn) ((/2^(b0-tb)) <$> [0..]);
   }
   in alignL buckets <> (value mempty ∘ fold ∘ Map.mapWithKey positX ∘ fmap alignL) (foldMap go <$> nrm);
