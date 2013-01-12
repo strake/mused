@@ -150,7 +150,7 @@ bar' s (Time tn tb) b0 (Bar (Clef g0 o0) k nrm) =
     buckets :: (Renderable (Path R2) b, Backend b R2) => QDiagram b R2 (Last Rational);
     buckets =
       lineColor transparent $ hcat $
-      ($ rect (width ∘ go $ NR Nothing (Length 0 0)) 6) ∘ value ∘ Last ∘ Just <$>
+      ($ rect (width ∘ go $ NR Nothing (Length 0 0)) 10) ∘ value ∘ Last ∘ Just <$>
       takeWhile (< fromIntegral tn) ((/2^b0) <$> [0..]);
   }
   in alignL buckets <> (value mempty ∘ fold ∘ Map.mapWithKey positX ∘ fmap alignL) (foldMap go <$> nrm);
