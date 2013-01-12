@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Main where
 
 import Prelude hiding (mapM, foldr);
@@ -224,6 +226,21 @@ main = do {
               _       -> return ();
            }
        ;
+    [GTK.Control] | Just kx <- GTK.eventKeyChar ev ->
+                      case kx of {
+                        '-' -> modifyIORef stp $ \ st -> st { st_w = scale (6/5) (st_w st) };
+                        '+' -> modifyIORef stp $ \ st -> st { st_w = scale (5/6) (st_w st) };
+                         _  -> return ();
+                      }
+                  | otherwise ->
+                      case GTK.eventKeyName ev of {
+                        "Left"  -> modifyIORef stp $ \ st@St { st_w = (unp2 -> (xl, _), unp2 -> (xr, _)) } -> st { st_w = translateX ((xr - xl)/12) (st_w st) };
+                        "Right" -> modifyIORef stp $ \ st@St { st_w = (unp2 -> (xl, _), unp2 -> (xr, _)) } -> st { st_w = translateX ((xl - xr)/12) (st_w st) };
+                        "Up"    -> modifyIORef stp $ \ st@St { st_w = (unp2 -> (_, yd), unp2 -> (_, yu)) } -> st { st_w = translateY ((yd - yu)/12) (st_w st) };
+                        "Down"  -> modifyIORef stp $ \ st@St { st_w = (unp2 -> (_, yd), unp2 -> (_, yu)) } -> st { st_w = translateY ((yu - yd)/12) (st_w st) };
+                        _       -> return ();
+                      }
+                  ;
     _  -> return ();
   } >>
   uncurry (GTK.Rectangle 0 0) <$> GTK.drawableGetSize d >>=
