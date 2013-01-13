@@ -130,6 +130,7 @@ main = do {
   uncurry3 (liftA3 (,,)) <$>
   locate (GTK.eventX ev, GTK.eventY ev) >>=
   (maybe (return ()) $ \ ((n, p), g', m) ->
+   readIORef  vp >>= \ (Piece ta _) ->
    readIORef stp >>= \ st ->
    modifyIORef vp $ onPieceBars ∘ modifyAt (m, n) $
    case GTK.eventButton ev of {
@@ -145,14 +146,12 @@ main = do {
                                          keyPCs k;
                                    }
                                    in Pitch (PitchClass g (a + st_a st)) ((g' + fromEnum g0) `div` 7 + o0))) (st_l st)) $
-                        Map.mapWithKey (\ q -> q < p || q - p >= (nl ∘ st_l) st ? id $ Set.filter $ \ (NR m_p _) -> isJust m_p) $
+                        Map.mapWithKey (\ q -> q < p || q - p >= (nl ∘ st_l) st * 2^(let { Time _ b0 = ta ! n; } in b0) ? id $ Set.filter $ \ (NR m_p _) -> isJust m_p) $
                         nrm;
      GTK.RightButton -> \ (Bar clef k nrm) ->
-                        Bar clef k $ let {
-                          f q x | q >= p, q - p < (nl ∘ st_l) st = Nothing
-                                | otherwise = Just x
-                                ;
-                        } in (Map.insert p (Set.singleton $ NR Nothing (st_l st)) ∘ Map.mapMaybeWithKey f) nrm;
+                        Bar clef k $
+                        Map.insert p (Set.singleton $ NR Nothing (st_l st)) ∘ Map.filterWithKey (\ q _ -> q < p || q - p >= (nl ∘ st_l) st * 2^(let { Time _ b0 = ta ! n; } in b0)) $
+                        nrm;
      _               -> id;
    }) >>
   uncurry (GTK.Rectangle 0 0) <$> GTK.drawableGetSize d >>=
