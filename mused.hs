@@ -144,7 +144,7 @@ main = do {
                                          Set.filter (\ (PitchClass f _) -> f == g) $
                                          keyPCs k;
                                    }
-                                   in Pitch (PitchClass g (a + st_a st)) ((g' + fromEnum g0) `div` 8 + o0))) (st_l st)) $
+                                   in Pitch (PitchClass g (a + st_a st)) ((g' + fromEnum g0) `div` 7 + o0))) (st_l st)) $
                         Map.mapWithKey (\ q -> q < p || q - p >= (nl ∘ st_l) st ? id $ Set.filter $ \ (NR m_p _) -> isJust m_p) $
                         nrm;
      GTK.RightButton -> \ (Bar clef k nrm) ->

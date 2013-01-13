@@ -67,7 +67,7 @@ instance Show PLtr where {
 };
 
 instance Enum PLtr where {
-  toEnum = PLtr ∘ toEnum ∘ (+ fromEnum 'A') ∘ (`mod` 8);
+  toEnum = PLtr ∘ toEnum ∘ (+ fromEnum 'A') ∘ (`mod` 7);
   fromEnum (PLtr x) = fromEnum x - fromEnum 'A';
 };
 

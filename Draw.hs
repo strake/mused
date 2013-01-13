@@ -114,7 +114,7 @@ bar' s (Time tn tb) b0 (Bar (Clef g0 o0) k nrm) =
         -- staff position
         -- rests meant to originate at midline
         p = case m_p of {
-              Just (Pitch pc@(PitchClass g a) o) -> fromEnum g - fromEnum g0 + 8*(o-o0);
+              Just (Pitch pc@(PitchClass g a) o) -> fromEnum g - fromEnum g0 + 7*(o-o0);
               _                                  -> 0;
             };
 
