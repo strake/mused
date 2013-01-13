@@ -86,7 +86,7 @@ staff l =
            translateY (fromIntegral n/2) $
            value (Last (Just n)) $
            lineColor transparent $
-           rect l (1/2)) [-6..6];
+           rect l (1/2)) [-8..8];
 
 -- Synchronized bars
 sxbars :: ∀ b . (Renderable (Path R2) b, Backend b R2) => Style -> Time -> [Bar] -> [QDiagram b R2 (Last Rational)];
@@ -150,7 +150,7 @@ bar' s (Time tn tb) b0 (Bar (Clef g0 o0) k nrm) =
     buckets :: (Renderable (Path R2) b, Backend b R2) => QDiagram b R2 (Last Rational);
     buckets =
       lineColor transparent $ hcat $
-      ($ rect (width ∘ go $ NR Nothing (Length 0 0)) 10) ∘ value ∘ Last ∘ Just <$>
+      ($ rect (width ∘ go $ NR Nothing (Length 0 0)) 16) ∘ value ∘ Last ∘ Just <$>
       takeWhile (< fromIntegral tn) ((/2^(b0-tb)) <$> [0..]);
   }
   in alignL buckets <> (value mempty ∘ fold ∘ Map.mapWithKey positX ∘ fmap alignL) (foldMap go <$> nrm);
