@@ -149,11 +149,10 @@ main = do {
                         nrm;
      GTK.RightButton -> \ (Bar clef k nrm) ->
                         Bar clef k $ let {
-                          f q x | q == p = Just $ Set.singleton $ NR Nothing (st_l st)
-                                | q  > p, q - p < (nl ∘ st_l) st = Nothing
+                          f q x | q >= p, q - p < (nl ∘ st_l) st = Nothing
                                 | otherwise = Just x
                                 ;
-                        } in Map.mapMaybeWithKey f nrm;
+                        } in (Map.insert p (Set.singleton $ NR Nothing (st_l st)) ∘ Map.mapMaybeWithKey f) nrm;
      _               -> id;
    }) >>
   uncurry (GTK.Rectangle 0 0) <$> GTK.drawableGetSize d >>=
