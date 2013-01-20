@@ -115,6 +115,9 @@ main = do {
       flip runQuery (p2 $ join (***) (fromRational ∘ toRational) pos) ∘
       query ∘ snd ∘ adjustDia Cairo o ∘ v ∘ draw <$>
       readIORef vp;
+
+    refresh :: IO ();
+    refresh = uncurry (GTK.Rectangle 0 0) <$> GTK.drawableGetSize d >>= flip (GTK.drawWindowInvalidateRect d) True;
   };
   GTK.onDestroy w GTK.mainQuit;
   GTK.widgetSetCanFocus dra True;
@@ -134,7 +137,7 @@ main = do {
    readIORef stp >>= \ st ->
    modifyIORef vp $ onPieceBars ∘ modifyAt (m, n) $
    case GTK.eventButton ev of {
-     GTK.LeftButton ->  \ (Bar clef@(Clef g0 o0) k nrm) ->
+     GTK.LeftButton  -> \ (Bar clef@(Clef g0 o0) k nrm) ->
                         Bar clef k $
                         (Map.insertWith Set.union p ∘ Set.singleton $
                          NR (Just (let {
@@ -153,9 +156,13 @@ main = do {
                         Map.insert p (Set.singleton $ NR Nothing (st_l st)) ∘ Map.filterWithKey (\ q _ -> q < p || q - p >= (nl ∘ st_l) st * 2^(let { Time _ b0 = ta ! n; } in b0)) $
                         nrm;
      _               -> id;
-   }) >>
-  uncurry (GTK.Rectangle 0 0) <$> GTK.drawableGetSize d >>=
-  flip (GTK.drawWindowInvalidateRect d) True >> return False;
+   }) >> False <$ refresh;
+  GTK.onScroll dra $
+  \ ev ->
+  case GTK.eventDirection ev of {
+     GTK.ScrollDown -> modifyIORef stp $ \ st@St { st_w = (unp2 -> (xl, _), unp2 -> (xr, _)) } -> st { st_w = translateX ((xr - xl)/12) (st_w st) };
+     GTK.ScrollUp   -> modifyIORef stp $ \ st@St { st_w = (unp2 -> (xl, _), unp2 -> (xr, _)) } -> st { st_w = translateX ((xl - xr)/12) (st_w st) };
+  } >> False <$ refresh;
   GTK.onKeyPress dra $
   \ ev ->
   case GTK.eventModifier ev List.\\ [GTK.Shift, GTK.Lock, GTK.Button1, GTK.Button2, GTK.Button3, GTK.Button4, GTK.Button5, GTK.Alt2] of {
@@ -240,9 +247,7 @@ main = do {
                       }
                   ;
     _  -> return ();
-  } >>
-  uncurry (GTK.Rectangle 0 0) <$> GTK.drawableGetSize d >>=
-  flip (GTK.drawWindowInvalidateRect d) True >> return False;
+  } >> False <$ refresh;
   GTK.mainGUI;
 };
 
