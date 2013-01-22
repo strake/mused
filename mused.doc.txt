@@ -1,0 +1,31 @@
+mused, a written music editor
+
+== operation ==
+
+left-click to insert note; right-click to insert rest.
+
+== key bonds ==
+
+=== view ===
+
+Ctrl <arrow>	move document
+Ctrl ±		zoom
+
+=== edition ===
+
+<insert>	insert bar at nearest bar line to pointer
+<delete>	delete bar under pointer
+Shift <insert>	insert staff
+Shift <delete>	delete staff
+C		set clef           of new bars; format: <letter><octave number>
+K		set key  signature of new bars; format: <# of sharps>, so flat keys are less than zero
+T		set time signature of new bars; format: a/b
+0-9		set base 2 logarithm of length of new notes, rests
+±		raise/lower new notes by a semitone
+
+=== files ===
+
+mused uses an undocumented binary format, which is unfortunate.
+
+r		read file
+w		write file
