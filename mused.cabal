@@ -1,0 +1,8 @@
+name:		mused
+version:	0
+build-type:	Simple
+
+executable mused
+  build-depends:	base, base-unicode-symbols, array, containers, bytestring, colour, split, binary, diagrams-core, diagrams-lib, diagrams-cairo, diagrams-gtk, gtk
+  main-is:		mused.hs
+  extensions:		UnicodeSyntax, PatternGuards, GeneralizedNewtypeDeriving, GADTs, ExistentialQuantification, FlexibleContexts, FlexibleInstances, ScopedTypeVariables
