@@ -18,7 +18,7 @@ Ctrl ±		zoom
 Shift <insert>	insert staff
 Shift <delete>	delete staff
 C		set clef           of new bars; format: <letter at centre line><octave number>
-K		set key  signature of new bars; format: <# of sharps>, so flat keys are less than zero
+K		set key  signature of new bars; format: ±<# of sharps>, so flat keys are less than zero
 T		set time signature of new bars; format: a/b
 0-9		set base 2 logarithm of length of new notes, rests
 ±		raise/lower new notes by a semitone
