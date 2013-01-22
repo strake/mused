@@ -12,6 +12,7 @@ import Data.Array;
 import Data.Binary;
 import qualified Data.ByteString.Lazy as BS;
 import Data.Char;
+import Data.Eq.Unicode;
 import Data.Foldable;
 import Data.Foldable.Unicode;
 import Data.IORef;
@@ -138,22 +139,42 @@ main = do {
    modifyIORef vp $ onPieceBars ∘ modifyAt (m, n) $
    case GTK.eventButton ev of {
      GTK.LeftButton  -> \ (Bar clef@(Clef g0 o0) k nrm) ->
+                        let {
+                          g :: PLtr;
+                          g = toEnum $ fromEnum g0 + g';
+                          a = list const 0 ∘ Set.toList ∘
+                              Set.map (\ (PitchClass _ a) -> a) ∘
+                              Set.filter (\ (PitchClass f _) -> f == g) $
+                              keyPCs k;
+                          pitch = Pitch (PitchClass g (a + st_a st)) ((g' + fromEnum g0) `div` 7 + o0);
+                        } in
                         Bar clef k $
-                        (Map.insertWith Set.union p ∘ Set.singleton $
-                         NR (Just (let {
-                                     g :: PLtr;
-                                     g = toEnum $ fromEnum g0 + g';
-                                     a = list const 0 ∘ Set.toList ∘
-                                         Set.map (\ (PitchClass _ a) -> a) ∘
-                                         Set.filter (\ (PitchClass f _) -> f == g) $
-                                         keyPCs k;
-                                   }
-                                   in Pitch (PitchClass g (a + st_a st)) ((g' + fromEnum g0) `div` 7 + o0))) (st_l st)) $
-                        Map.mapWithKey (\ q -> q < p || q - p >= (nl ∘ st_l) st * 2^(let { Time _ b0 = ta ! n; } in b0) ? id $ Set.filter $ \ (NR m_p _) -> isJust m_p) $
+                        (Map.insertWith Set.union p ∘ Set.singleton $ NR (Just pitch) (st_l st)) ∘
+                        Map.mapWithKey
+                        (\ q ->
+                         let {
+                           Time _ b0 = ta ! n;
+                           f | q - p >= (nl ∘ st_l) st * 2^b0 = id
+                             | q < p = Set.map $ \ (NR m_p l) -> NR m_p $ isJust m_p && m_p ≠ Just pitch ? l $ min l $ toL ((p - q)/2^b0)
+                             | otherwise = Set.filter $ \ (NR m_p _) -> isJust m_p
+                             ;
+                         } in f) $
                         nrm;
      GTK.RightButton -> \ (Bar clef k nrm) ->
                         Bar clef k $
-                        Map.insert p (Set.singleton $ NR Nothing (st_l st)) ∘ Map.filterWithKey (\ q _ -> q < p || q - p >= (nl ∘ st_l) st * 2^(let { Time _ b0 = ta ! n; } in b0)) $
+                        Map.alter
+                        ((Just ∘) $ maybe (Set.singleton $ NR Nothing (st_l st)) ∘ join $ \ nrs ->
+                         isNothing (find (\ (NR _ l) -> l > st_l st) nrs) ? Set.insert (NR Nothing (st_l st)) $ id) p ∘
+                        Map.mapMaybeWithKey
+                        (\ q ->
+                         let {
+                           Time _ b0 = ta ! n;
+                           f | q - p >= (nl ∘ st_l) st * 2^b0 = Just
+                             | q < p = (Just ∘) $ Set.map $ \ (NR m_p l) -> NR m_p (min l $ toL ((p - q)/2^b0))
+                             | q ≡ p = (Just ∘) $ Set.filter $ \ (NR m_p l) -> isNothing m_p && l > st_l st
+                             | otherwise = pure Nothing
+                             ;
+                         } in f) $
                         nrm;
      _               -> id;
    }) >> False <$ refresh;
@@ -250,6 +271,13 @@ main = do {
   } >> False <$ refresh;
   GTK.mainGUI;
 };
+
+toL :: Rational -> Length;
+toL l =
+  let {
+    b = head $ dropWhile (\ b ->   1/2^b     >  l) [0..];
+    n = last $ takeWhile (\ n -> 3^n/2^(n+b) <= l) [0..];
+  } in Length n b;
 
 draw :: Piece -> QDiagram Cairo R2 (Last (BarNumber, Rational {- beat number -}), Last Int {- staff position -}, Last StaffNumber);
 draw (Piece ta ba) =
