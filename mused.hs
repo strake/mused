@@ -60,7 +60,7 @@ st_view (St { st_w = (P p, P q) }) = view (P p) (q-p);
 
 main = do {
   vp <- newIORef (Piece (array (1, 1) [(1, Time 1 0)]) (array ((1, 1), (1, 1)) [((1, 1), Bar (Clef (PLtr 'B') 4) 0 Map.empty)]));
-  stp <- newIORef (St { st_l = Length 0 0, st_a = 0, st_time = Time 1 0, st_key = 0, st_clef = Clef (PLtr 'B') 4, st_w = (p2 (-40, -37), p2 (0, 3)) });
+  stp <- newIORef (St { st_l = Length 0 0, st_a = 0, st_time = Time 1 0, st_key = 0, st_clef = Clef (PLtr 'B') 4, st_w = (p2 (-60, -55), p2 (0, 5)) });
   hintp <- newIORef Nothing; -- hint note
   filename_p <- newIORef "";
 
